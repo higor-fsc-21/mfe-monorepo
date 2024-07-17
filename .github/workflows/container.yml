@@ -1,0 +1,38 @@
+# workflow name
+name: Container
+
+on:
+  # trigger on push events
+  push:
+    # run the workflow only for the main branch
+    branches:
+      - main
+    # run the workflow only for changes in the package/container directory
+    paths:
+      - "package/container/**"
+
+defaults:
+  run:
+    # run the commands only on the package/container directory
+    working-directory: package/container
+
+jobs:
+  # build process
+  build:
+    # set up a virtual machine to run the workflow
+    runs-on: ubuntu-latest
+
+    steps:
+      # load the repository on the virtual machine
+      - uses: actions/checkout@v2
+      - run: npm install
+      - run: npm run build
+
+      # to get access to the aws cli
+      - uses: shinyinc/action-aws-cli@v1.2
+      # command to sync the dist folder with the s3 bucket
+      - run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/container/latest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ""
